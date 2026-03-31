@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "Moment": {
+      "title": "Moment",
+      "description": "Generated mood and weather图文",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "image": { "type": "string", "description": "Base64 image data" },
+        "text": { "type": "string", "description": "AI generated text" },
+        "weather": { "type": "string" },
+        "mood": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "text", "createdAt"]
+    },
+    "Quote": {
+      "title": "Quote",
+      "description": "Collected MBTI quotes",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "source": { "type": "string" },
+        "author": { "type": "string" },
+        "mbti": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "content", "createdAt"]
+    },
+    "Writing": {
+      "title": "Writing",
+      "description": "User writing logs",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "content", "createdAt"]
+    },
+    "UserConfig": {
+      "title": "UserConfig",
+      "description": "User preferences and state",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "mbti": { "type": "string" },
+        "lastQuoteRefresh": { "type": "string", "format": "date-time" },
+        "dailyQuote": {
+          "type": "object",
+          "properties": {
+            "content": { "type": "string" },
+            "source": { "type": "string" },
+            "author": { "type": "string" }
+          }
+        }
+      },
+      "required": ["userId"]
+    }
+  },
+  "firestore": {
+    "/moments/{momentId}": {
+      "schema": "Moment",
+      "description": "User moments"
+    },
+    "/quotes/{quoteId}": {
+      "schema": "Quote",
+      "description": "User collected quotes"
+    },
+    "/writings/{writingId}": {
+      "schema": "Writing",
+      "description": "User writings"
+    },
+    "/userConfigs/{userId}": {
+      "schema": "UserConfig",
+      "description": "User configuration"
+    }
+  }
+}

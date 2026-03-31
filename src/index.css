@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Noto Serif SC", ui-serif, Georgia, serif;
+  
+  --color-ink: #000000;
+  --color-deep: #0A0D16;
+  --color-paper: #F5F5F5;
+  --color-cyan-light: #E0F7FA;
+  --color-silver-blue: #E1F5FE;
+}
+
+body {
+  @apply bg-ink text-paper font-serif overflow-hidden;
+}
+
+.butterfly-glow {
+  filter: drop-shadow(0 0 8px rgba(224, 247, 250, 0.6));
+}
+
+.glass-morphism {
+  background: rgba(10, 13, 22, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(224, 247, 250, 0.1);
+}
+
+.markdown-body p {
+  @apply mb-4 leading-relaxed;
+}
