@@ -25,13 +25,9 @@ export default function App() {
   const [writingBg, setWritingBg] = useState<string | null>(null);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, async (u) => {
+    return onAuthStateChanged(auth, (u) => {
       if (!u) {
-        try {
-          await signInAnon();
-        } catch (e) {
-          console.error("Anonymous sign-in failed:", e);
-        }
+        signInAnon();
       } else {
         setUser(u);
       }
@@ -69,43 +65,19 @@ export default function App() {
       {activeModule === 'home' && (
         <>
           <button 
-            onClick={async () => {
-              try {
-                if (user) setActiveModule('mbti');
-                else await signIn();
-              } catch (e) {
-                console.error("Sign-in failed:", e);
-                alert("登录失败，请检查 Firebase 配置及授权域名。");
-              }
-            }}
+            onClick={() => user ? setActiveModule('mbti') : signIn()}
             className="fixed top-6 right-6 p-2 text-paper/40 hover:text-paper transition-colors"
           >
             <Book size={20} />
           </button>
           <button 
-            onClick={async () => {
-              try {
-                if (user) setActiveModule('write');
-                else await signIn();
-              } catch (e) {
-                console.error("Sign-in failed:", e);
-                alert("登录失败，请检查 Firebase 配置及授权域名。");
-              }
-            }}
+            onClick={() => user ? setActiveModule('write') : signIn()}
             className="fixed bottom-6 left-6 p-2 text-paper/40 hover:text-paper transition-colors"
           >
             <PenTool size={20} />
           </button>
           <button 
-            onClick={async () => {
-              try {
-                if (user) setActiveModule('space');
-                else await signIn();
-              } catch (e) {
-                console.error("Sign-in failed:", e);
-                alert("登录失败，请检查 Firebase 配置及授权域名。");
-              }
-            }}
+            onClick={() => user ? setActiveModule('space') : signIn()}
             className="fixed bottom-6 right-6 p-2 text-paper/40 hover:text-paper transition-colors"
           >
             <User size={20} />
