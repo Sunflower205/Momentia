@@ -9,19 +9,8 @@ async function callGeminiWithRetry<T>(fn: () => Promise<T>, maxRetries = 3, init
       return await fn();
     } catch (error: any) {
       lastError = error;
-      
-      // Check for quota exhaustion specifically
-      const isQuotaExceeded = error?.status === "RESOURCE_EXHAUSTED" || error?.message?.includes("Quota exceeded") || error?.message?.includes("429");
-      if (isQuotaExceeded) {
-        // For quota errors, we don't want to retry indefinitely in a tight loop if it's a daily limit
-        // But we'll throw a specific error so the UI can handle it
-        const quotaError = new Error("QUOTA_EXCEEDED");
-        (quotaError as any).originalError = error;
-        throw quotaError;
-      }
-
-      // Check if it's a retryable 503 error
-      const isRetryable = error?.status === "UNAVAILABLE" || error?.code === 503 || error?.message?.includes("503");
+      // Check if it's a 503 or 429 error
+      const isRetryable = error?.status === "UNAVAILABLE" || error?.code === 503 || error?.code === 429 || error?.message?.includes("503") || error?.message?.includes("429");
       
       if (isRetryable && i < maxRetries - 1) {
         const delay = initialDelay * Math.pow(2, i);
@@ -36,7 +25,7 @@ async function callGeminiWithRetry<T>(fn: () => Promise<T>, maxRetries = 3, init
 }
 
 export async function generateMoment(input: string) {
-  const model = "gemini-3.1-flash-lite-preview";
+  const model = "gemini-3-flash-preview";
   
   // 1. Generate text
   const textResponse = await callGeminiWithRetry(() => ai.models.generateContent({
@@ -62,12 +51,11 @@ export async function generateMoment(input: string) {
 
   // 2. Generate image
   const imageResponse = await callGeminiWithRetry(() => ai.models.generateContent({
-    model: "gemini-3.1-flash-image-preview",
+    model: "gemini-2.5-flash-image",
     contents: data.imagePrompt,
     config: {
       imageConfig: {
-        aspectRatio: "1:1",
-        imageSize: "1K"
+        aspectRatio: "1:1"
       }
     }
   }));
@@ -87,7 +75,7 @@ export async function generateMoment(input: string) {
 }
 
 export async function generateMBTIQuote(mbti: string) {
-  const model = "gemini-3.1-flash-lite-preview";
+  const model = "gemini-3-flash-preview";
   const response = await callGeminiWithRetry(() => ai.models.generateContent({
     model,
     contents: `为MBTI人格类型“${mbti}”推荐一句来自书籍或文艺向影视的摘抄。要求：100%原文，严格校对。`,

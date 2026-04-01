@@ -122,9 +122,7 @@ function Home({ user, setIsTyping, setFocusPoint, setWritingBg }: { user: Fireba
       if (data.image) setWritingBg(data.image);
     } catch (e: any) {
       console.error(e);
-      if (e.message === "QUOTA_EXCEEDED") {
-        setError("今日 AI 生成配额已用完，请稍后再试（通常需等待 1 分钟或次日重置）。");
-      } else if (e?.status === "UNAVAILABLE" || e?.code === 503) {
+      if (e?.status === "UNAVAILABLE" || e?.code === 503) {
         setError("AI 服务目前压力较大，正在排队中，请稍后再试。");
       } else {
         setError("生成失败，请检查网络或稍后重试。");
@@ -425,9 +423,7 @@ function MBTI({ user, onClose }: { user: FirebaseUser | null, onClose: () => voi
       }
     } catch (e: any) {
       console.error(e);
-      if (e.message === "QUOTA_EXCEEDED") {
-        setError("今日配额已用完，请稍后再试。");
-      } else if (e?.status === "UNAVAILABLE" || e?.code === 503) {
+      if (e?.status === "UNAVAILABLE" || e?.code === 503) {
         setError("AI 服务繁忙，请稍后再试。");
       } else {
         setError("获取摘抄失败。");
