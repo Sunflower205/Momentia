@@ -1,15 +1,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const getApiKey = () => {
-  // Prefer process.env for the current environment, fallback to VITE_ for standard Vite deployments like Vercel
-  try {
-    return (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : '') || import.meta.env.VITE_GEMINI_API_KEY || "";
-  } catch (e) {
-    return import.meta.env.VITE_GEMINI_API_KEY || "";
-  }
-};
-
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  console.warn("GEMINI_API_KEY is missing. AI features will not work until configured in environment variables.");
+}
+const ai = new GoogleGenAI({ apiKey: apiKey || "MISSING_KEY" });
 
 export async function generateMoment(input: string) {
   const model = "gemini-3-flash-preview";

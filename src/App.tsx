@@ -25,13 +25,9 @@ export default function App() {
   const [writingBg, setWritingBg] = useState<string | null>(null);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, async (u) => {
+    return onAuthStateChanged(auth, (u) => {
       if (!u) {
-        try {
-          await signInAnon();
-        } catch (e) {
-          console.error("Anonymous sign-in failed:", e);
-        }
+        signInAnon();
       } else {
         setUser(u);
       }
@@ -69,43 +65,19 @@ export default function App() {
       {activeModule === 'home' && (
         <>
           <button 
-            onClick={async () => {
-              try {
-                if (user) setActiveModule('mbti');
-                else await signIn();
-              } catch (e) {
-                console.error("Sign-in failed:", e);
-                alert("登录失败，请检查 Firebase 配置及授权域名。");
-              }
-            }}
+            onClick={() => user ? setActiveModule('mbti') : signIn()}
             className="fixed top-6 right-6 p-2 text-paper/40 hover:text-paper transition-colors"
           >
             <Book size={20} />
           </button>
           <button 
-            onClick={async () => {
-              try {
-                if (user) setActiveModule('write');
-                else await signIn();
-              } catch (e) {
-                console.error("Sign-in failed:", e);
-                alert("登录失败，请检查 Firebase 配置及授权域名。");
-              }
-            }}
+            onClick={() => user ? setActiveModule('write') : signIn()}
             className="fixed bottom-6 left-6 p-2 text-paper/40 hover:text-paper transition-colors"
           >
             <PenTool size={20} />
           </button>
           <button 
-            onClick={async () => {
-              try {
-                if (user) setActiveModule('space');
-                else await signIn();
-              } catch (e) {
-                console.error("Sign-in failed:", e);
-                alert("登录失败，请检查 Firebase 配置及授权域名。");
-              }
-            }}
+            onClick={() => user ? setActiveModule('space') : signIn()}
             className="fixed bottom-6 right-6 p-2 text-paper/40 hover:text-paper transition-colors"
           >
             <User size={20} />
@@ -123,6 +95,7 @@ function Home({ user, setIsTyping, setFocusPoint, setWritingBg }: { user: Fireba
   const [loading, setLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || !result) {
@@ -139,6 +112,7 @@ function Home({ user, setIsTyping, setFocusPoint, setWritingBg }: { user: Fireba
     if (!input.trim() || loading) return;
     setLoading(true);
     setIsRefreshing(true);
+    setError(null);
     setFocusPoint({ x: 50, y: 50 });
     try {
       const data = await generateMoment(input);
@@ -146,8 +120,12 @@ function Home({ user, setIsTyping, setFocusPoint, setWritingBg }: { user: Fireba
       const randomLayout = layouts[Math.floor(Math.random() * layouts.length)];
       setResult({ ...data, layout: randomLayout });
       if (data.image) setWritingBg(data.image);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      // Use a more user-friendly way to show errors than alert if possible, 
+      // but for now, we'll use a simple console log or a state to show it.
+      // Since we don't have a toast library, I'll add a simple error state.
+      setError("生成失败。如果是部署版本，请检查 Vercel 环境变量 GEMINI_API_KEY 是否已设置。");
     } finally {
       setLoading(false);
       setFocusPoint(null);
@@ -254,13 +232,7 @@ function Home({ user, setIsTyping, setFocusPoint, setWritingBg }: { user: Fireba
           >
             写下此刻
           </motion.h1>
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleGenerate();
-            }}
-            className="relative flex flex-col items-center"
-          >
+          <div className="relative">
             <input
               type="text"
               value={input}
@@ -269,33 +241,27 @@ function Home({ user, setIsTyping, setFocusPoint, setWritingBg }: { user: Fireba
                 setIsTyping(true);
               }}
               onBlur={() => setIsTyping(false)}
+              onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
               className="bg-transparent border-none outline-none text-center text-lg w-64 caret-cyan-light"
-              placeholder="在这里输入..."
               autoFocus
             />
-            <div className="w-64 h-px bg-paper/10 mt-2 relative overflow-hidden">
-              {loading && (
-                <motion.div 
-                  key="loading-line"
-                  initial={{ opacity: 0.2 }}
-                  animate={{ opacity: [0.2, 1, 0.2] }}
-                  transition={{ 
-                    repeat: Infinity, 
-                    duration: 1.2, 
-                    ease: "easeInOut" 
-                  }}
-                  className="absolute inset-0 bg-cyan-light"
-                />
-              )}
-            </div>
-            <button 
-              type="submit"
-              disabled={loading || !input.trim()}
-              className="mt-8 text-xs tracking-[0.3em] text-paper/30 hover:text-cyan-light transition-colors disabled:opacity-10"
-            >
-              {loading ? "正在感知..." : "生成意象"}
-            </button>
-          </form>
+            {loading && (
+              <motion.div 
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+                className="absolute -bottom-2 left-0 right-0 h-px bg-cyan-light/30"
+              />
+            )}
+            {error && (
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute -bottom-12 left-0 right-0 text-xs text-red-400/60 text-center"
+              >
+                {error}
+              </motion.p>
+            )}
+          </div>
         </div>
       ) : (
         <motion.div 
