@@ -1,16 +1,34 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) {
-  console.warn("GEMINI_API_KEY is missing. AI features will not work until configured in environment variables.");
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+
+async function callGeminiWithRetry<T>(fn: () => Promise<T>, maxRetries = 3, initialDelay = 1000): Promise<T> {
+  let lastError: any;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      // Check if it's a 503 or 429 error
+      const isRetryable = error?.status === "UNAVAILABLE" || error?.code === 503 || error?.code === 429 || error?.message?.includes("503") || error?.message?.includes("429");
+      
+      if (isRetryable && i < maxRetries - 1) {
+        const delay = initialDelay * Math.pow(2, i);
+        console.warn(`Gemini API error (503/429), retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
 }
-const ai = new GoogleGenAI({ apiKey: apiKey || "MISSING_KEY" });
 
 export async function generateMoment(input: string) {
   const model = "gemini-3-flash-preview";
   
   // 1. Generate text
-  const textResponse = await ai.models.generateContent({
+  const textResponse = await callGeminiWithRetry(() => ai.models.generateContent({
     model,
     contents: `基于输入“${input}”，生成一段温柔、克制、文艺的原创短句（100%原创，不摘抄，不引用）。同时分析其中的心情和天气。`,
     config: {
@@ -27,12 +45,12 @@ export async function generateMoment(input: string) {
         required: ["text", "subtext", "mood", "weather", "imagePrompt"]
       }
     }
-  });
+  }));
 
   const data = JSON.parse(textResponse.text || "{}");
 
   // 2. Generate image
-  const imageResponse = await ai.models.generateContent({
+  const imageResponse = await callGeminiWithRetry(() => ai.models.generateContent({
     model: "gemini-2.5-flash-image",
     contents: data.imagePrompt,
     config: {
@@ -40,7 +58,7 @@ export async function generateMoment(input: string) {
         aspectRatio: "1:1"
       }
     }
-  });
+  }));
 
   let base64Image = "";
   for (const part of imageResponse.candidates?.[0]?.content?.parts || []) {
@@ -58,7 +76,7 @@ export async function generateMoment(input: string) {
 
 export async function generateMBTIQuote(mbti: string) {
   const model = "gemini-3-flash-preview";
-  const response = await ai.models.generateContent({
+  const response = await callGeminiWithRetry(() => ai.models.generateContent({
     model,
     contents: `为MBTI人格类型“${mbti}”推荐一句来自书籍或文艺向影视的摘抄。要求：100%原文，严格校对。`,
     config: {
@@ -82,7 +100,7 @@ export async function generateMBTIQuote(mbti: string) {
         required: ["content", "source", "author"]
       }
     }
-  });
+  }));
 
   return JSON.parse(response.text || "{}");
 }

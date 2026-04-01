@@ -122,10 +122,11 @@ function Home({ user, setIsTyping, setFocusPoint, setWritingBg }: { user: Fireba
       if (data.image) setWritingBg(data.image);
     } catch (e: any) {
       console.error(e);
-      // Use a more user-friendly way to show errors than alert if possible, 
-      // but for now, we'll use a simple console log or a state to show it.
-      // Since we don't have a toast library, I'll add a simple error state.
-      setError("生成失败。如果是部署版本，请检查 Vercel 环境变量 GEMINI_API_KEY 是否已设置。");
+      if (e?.status === "UNAVAILABLE" || e?.code === 503) {
+        setError("AI 服务目前压力较大，正在排队中，请稍后再试。");
+      } else {
+        setError("生成失败，请检查网络或稍后重试。");
+      }
     } finally {
       setLoading(false);
       setFocusPoint(null);
@@ -256,7 +257,7 @@ function Home({ user, setIsTyping, setFocusPoint, setWritingBg }: { user: Fireba
               <motion.p 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="absolute -bottom-12 left-0 right-0 text-xs text-red-400/60 text-center"
+                className="absolute -bottom-8 left-0 right-0 text-[10px] text-red-400/60 tracking-widest"
               >
                 {error}
               </motion.p>
@@ -368,6 +369,7 @@ function MBTI({ user, onClose }: { user: FirebaseUser | null, onClose: () => voi
   const [quote, setQuote] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -403,6 +405,7 @@ function MBTI({ user, onClose }: { user: FirebaseUser | null, onClose: () => voi
 
   const fetchQuote = async (mbti: string) => {
     setLoading(true);
+    setError(null);
     try {
       const data = await generateMBTIQuote(mbti);
       setQuote(data);
@@ -418,8 +421,13 @@ function MBTI({ user, onClose }: { user: FirebaseUser | null, onClose: () => voi
           }
         }, { merge: true });
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      if (e?.status === "UNAVAILABLE" || e?.code === 503) {
+        setError("AI 服务繁忙，请稍后再试。");
+      } else {
+        setError("获取摘抄失败。");
+      }
     } finally {
       setLoading(false);
     }
@@ -519,6 +527,9 @@ function MBTI({ user, onClose }: { user: FirebaseUser | null, onClose: () => voi
               >
                 {loading ? '正在寻觅...' : '开启今日摘抄'}
               </button>
+              {error && (
+                <p className="mt-4 text-[10px] text-red-400/60 tracking-widest">{error}</p>
+              )}
             </div>
           )}
         </div>
