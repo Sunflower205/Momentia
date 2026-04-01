@@ -25,9 +25,13 @@ export default function App() {
   const [writingBg, setWritingBg] = useState<string | null>(null);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, (u) => {
+    return onAuthStateChanged(auth, async (u) => {
       if (!u) {
-        signInAnon();
+        try {
+          await signInAnon();
+        } catch (e) {
+          console.error("Anonymous sign-in failed:", e);
+        }
       } else {
         setUser(u);
       }
@@ -65,19 +69,43 @@ export default function App() {
       {activeModule === 'home' && (
         <>
           <button 
-            onClick={() => user ? setActiveModule('mbti') : signIn()}
+            onClick={async () => {
+              try {
+                if (user) setActiveModule('mbti');
+                else await signIn();
+              } catch (e) {
+                console.error("Sign-in failed:", e);
+                alert("登录失败，请检查 Firebase 配置及授权域名。");
+              }
+            }}
             className="fixed top-6 right-6 p-2 text-paper/40 hover:text-paper transition-colors"
           >
             <Book size={20} />
           </button>
           <button 
-            onClick={() => user ? setActiveModule('write') : signIn()}
+            onClick={async () => {
+              try {
+                if (user) setActiveModule('write');
+                else await signIn();
+              } catch (e) {
+                console.error("Sign-in failed:", e);
+                alert("登录失败，请检查 Firebase 配置及授权域名。");
+              }
+            }}
             className="fixed bottom-6 left-6 p-2 text-paper/40 hover:text-paper transition-colors"
           >
             <PenTool size={20} />
           </button>
           <button 
-            onClick={() => user ? setActiveModule('space') : signIn()}
+            onClick={async () => {
+              try {
+                if (user) setActiveModule('space');
+                else await signIn();
+              } catch (e) {
+                console.error("Sign-in failed:", e);
+                alert("登录失败，请检查 Firebase 配置及授权域名。");
+              }
+            }}
             className="fixed bottom-6 right-6 p-2 text-paper/40 hover:text-paper transition-colors"
           >
             <User size={20} />
@@ -226,7 +254,13 @@ function Home({ user, setIsTyping, setFocusPoint, setWritingBg }: { user: Fireba
           >
             写下此刻
           </motion.h1>
-          <div className="relative">
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleGenerate();
+            }}
+            className="relative flex flex-col items-center"
+          >
             <input
               type="text"
               value={input}
@@ -235,18 +269,33 @@ function Home({ user, setIsTyping, setFocusPoint, setWritingBg }: { user: Fireba
                 setIsTyping(true);
               }}
               onBlur={() => setIsTyping(false)}
-              onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
               className="bg-transparent border-none outline-none text-center text-lg w-64 caret-cyan-light"
+              placeholder="在这里输入..."
               autoFocus
             />
-            {loading && (
-              <motion.div 
-                animate={{ opacity: [0.3, 1, 0.3] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="absolute -bottom-2 left-0 right-0 h-px bg-cyan-light/30"
-              />
-            )}
-          </div>
+            <div className="w-64 h-px bg-paper/10 mt-2 relative overflow-hidden">
+              {loading && (
+                <motion.div 
+                  key="loading-line"
+                  initial={{ opacity: 0.2 }}
+                  animate={{ opacity: [0.2, 1, 0.2] }}
+                  transition={{ 
+                    repeat: Infinity, 
+                    duration: 1.2, 
+                    ease: "easeInOut" 
+                  }}
+                  className="absolute inset-0 bg-cyan-light"
+                />
+              )}
+            </div>
+            <button 
+              type="submit"
+              disabled={loading || !input.trim()}
+              className="mt-8 text-xs tracking-[0.3em] text-paper/30 hover:text-cyan-light transition-colors disabled:opacity-10"
+            >
+              {loading ? "正在感知..." : "生成意象"}
+            </button>
+          </form>
         </div>
       ) : (
         <motion.div 
